@@ -24,6 +24,12 @@ internal sealed class StudioSettings
 
     public string EncoderKey { get; set; } = "hevc";
 
+    /// <summary>质量控制方式（NVENC）：CQP=恒定 qp，VBR=目标 cq。与 QualityValue 成对生效。</summary>
+    public string RateControl { get; set; } = "VBR";
+
+    /// <summary>质量值（CQP 的 qp / VBR 的 cq），1..51。</summary>
+    public int QualityValue { get; set; } = 28;
+
     public string Mode { get; set; } = "auto";
 
     public int EstimateFrames { get; set; } = 8;

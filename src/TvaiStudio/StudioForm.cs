@@ -41,6 +41,8 @@ internal sealed class StudioForm : Form
     private readonly ComboBox _cmbModel = new();
     private readonly ComboBox _cmbMode = new();
     private readonly ComboBox _cmbEncoder = new();
+    private readonly ComboBox _cmbRateControl = new();
+    private readonly NumericUpDown _numQualityValue = new();
     private readonly NumericUpDown _numEstimate = new();
     private readonly NumericUpDown _numSampleSeconds = new();
     private readonly NumericUpDown _numScale = new();
@@ -162,7 +164,7 @@ internal sealed class StudioForm : Form
         gbModel.Controls.Add(_cmbMode);
 
         AddLabel(gbModel, "编码器", 560, 24, 50);
-        _cmbEncoder.Bounds = R(612, 21, 190, 24);
+        _cmbEncoder.Bounds = R(612, 21, 130, 24);
         _cmbEncoder.DropDownStyle = ComboBoxStyle.DropDownList;
         foreach (var profile in EncoderProfile.All)
         {
@@ -171,6 +173,22 @@ internal sealed class StudioForm : Form
 
         _cmbEncoder.SelectedIndex = Math.Max(0, EncoderProfile.All.ToList().FindIndex(p => p.Key == _settings.EncoderKey));
         gbModel.Controls.Add(_cmbEncoder);
+
+        // 控制方式与质量值自选（CQP=恒定 qp / VBR=目标 cq）：例如 hevc + CQP + 10 可做
+        // 高质量中间文件，交 3FUI 二次压缩；默认 VBR+28 与历史三档默认一致。
+        AddLabel(gbModel, "控制方式", 754, 24, 60);
+        _cmbRateControl.Bounds = R(816, 21, 88, 24);
+        _cmbRateControl.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cmbRateControl.Items.AddRange(["CQP", "VBR"]);
+        _cmbRateControl.SelectedIndex = _settings.RateControl.Equals("CQP", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+        gbModel.Controls.Add(_cmbRateControl);
+
+        AddLabel(gbModel, "质量值", 664, 58, 46);
+        _numQualityValue.Bounds = R(712, 55, 56, 24);
+        _numQualityValue.Minimum = EncoderProfile.QualityValueMin;
+        _numQualityValue.Maximum = EncoderProfile.QualityValueMax;
+        _numQualityValue.Value = Math.Clamp(_settings.QualityValue, EncoderProfile.QualityValueMin, EncoderProfile.QualityValueMax);
+        gbModel.Controls.Add(_numQualityValue);
 
         AddLabel(gbModel, "估计帧数", 12, 58, 60);
         _numEstimate.Bounds = R(74, 55, 56, 24);
@@ -484,7 +502,13 @@ internal sealed class StudioForm : Form
         => _cmbMode.SelectedIndex switch { 0 => "manual", 2 => "relative", _ => "auto" };
 
     private EncoderProfile SelectedEncoder()
-        => EncoderProfile.All[Math.Max(0, _cmbEncoder.SelectedIndex)];
+        => EncoderProfile.All[Math.Max(0, _cmbEncoder.SelectedIndex)]
+            .WithRateControl(
+                _cmbRateControl.SelectedIndex == 0 ? "CQP" : "VBR",
+                ((int)_numQualityValue.Value).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    private string SelectedTvaiRateControl()
+        => _cmbRateControl.SelectedIndex == 0 ? "CQP" : "VBR";
 
     private void OnModelChanged()
     {
@@ -748,6 +772,8 @@ internal sealed class StudioForm : Form
         // 快照当前界面设置，避免编码期间用户改动造成队列内前后项不一致。
         _settings.OutputDirectory = _txtOutputDir.Text.Trim();
         _settings.EncoderKey = SelectedEncoder().Key;
+        _settings.RateControl = SelectedTvaiRateControl();
+        _settings.QualityValue = (int)_numQualityValue.Value;
         _settings.Mode = mode;
         _settings.EstimateFrames = (int)_numEstimate.Value;
         _settings.SampleSeconds = (double)_numSampleSeconds.Value;

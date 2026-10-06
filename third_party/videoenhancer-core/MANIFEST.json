@@ -1,8 +1,8 @@
 {
     "description":  "Shared tvai core synced from the VideoEnhancer repository (single implementation; do not edit in place)",
     "sourceRepo":  "D:/code/VideoEnhancer/VideoEnhancer",
-    "sourceCommit":  "270456461dedfbc5716bfc738c51454b2bcc5644",
-    "syncedAtUtc":  "2026-10-06T13:00:30Z",
+    "sourceCommit":  "c08b161c1074cfd44ee8d0e30962b1ca352446db",
+    "syncedAtUtc":  "2026-10-06T19:57:48Z",
     "fileCount":  8,
     "files":  [
                   {
@@ -28,7 +28,7 @@
                   {
                       "file":  "EncoderProfile.cs",
                       "sourcePath":  "tools/VideoEnhancer.TvaiTuner/EncoderProfile.cs",
-                      "sha256":  "187d474c7407ab23bf6dfc1c1e943885f15f7ff684aae0025143f16d576e0d65"
+                      "sha256":  "2afa763ae29bdaec8e352918722d0b20dcab23607f86887aaa164d6cf1f5045e"
                   },
                   {
                       "file":  "TunerViewModel.cs",

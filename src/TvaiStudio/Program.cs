@@ -309,6 +309,12 @@ internal static class Program
             return ExitUsage;
         }
 
+        if (!TryApplyRateControlOverride(encoder, options, out encoder, out var rateControlError))
+        {
+            Console.Error.WriteLine($"[tvaistudio] {rateControlError}");
+            return ExitUsage;
+        }
+
         if (mode is "auto" or "relative" && model.AutoModel.Length == 0)
         {
             Console.Error.WriteLine($"[tvaistudio] 模型 {model.Id} 不支持 {mode} 模式（未声明 autoModel）。");
@@ -397,6 +403,12 @@ internal static class Program
         if (encoder is null)
         {
             Console.Error.WriteLine($"[tvaistudio] --encoder 无效：{encoderKey}");
+            return ExitUsage;
+        }
+
+        if (!TryApplyRateControlOverride(encoder, options, out encoder, out var batchRateControlError))
+        {
+            Console.Error.WriteLine($"[tvaistudio] {batchRateControlError}");
             return ExitUsage;
         }
 
@@ -504,6 +516,12 @@ internal static class Program
             return ExitUsage;
         }
 
+        if (!TryApplyRateControlOverride(encoder, options, out encoder, out var exportRateControlError))
+        {
+            Console.Error.WriteLine($"[tvaistudio] {exportRateControlError}");
+            return ExitUsage;
+        }
+
         var exportDirectory = Path.GetDirectoryName(Path.GetFullPath(presetPath));
         if (string.IsNullOrEmpty(exportDirectory))
         {
@@ -600,7 +618,57 @@ internal static class Program
         Console.WriteLine("  --batch --input=<f1> [--input=<f2> …] [--input-dir=<dir>] --output-dir=<dir> --model=<id>");
         Console.WriteLine("           批量编码（与界面队列同一语义；Ctrl+C 取消并终止进程树）");
         Console.WriteLine("  --export-preset=<file> --model=<id> [--mode=<m>] [--encoder=<k>]   导出预设文件（JSON）");
+        Console.WriteLine("  [--rate-control=CQP|VBR] [--quality-value=N]             质量控制方式与值（与 --encoder 成套；缺省用保存的设置）");
         Console.WriteLine();
         Console.WriteLine("退出码：0 成功；2 用法/配置错误；3 缺少依赖（Topaz ffmpeg 或权重）；其余为 ffmpeg 原始退出码。");
+    }
+
+    /// <summary>
+    /// 解析可选的 <c>--rate-control</c> / <c>--quality-value</c> 覆盖并应用到编码器档位。
+    /// 两个参数都缺省时保持档位默认值（与既有无窗口行为一致）；只给其一时报用法错误。
+    /// </summary>
+    private static bool TryApplyRateControlOverride(
+        EncoderProfile baseEncoder,
+        Dictionary<string, string> options,
+        out EncoderProfile encoder,
+        out string error)
+    {
+        var hasRateControl = options.TryGetValue("--rate-control", out var rateControlRaw);
+        var hasQualityValue = options.TryGetValue("--quality-value", out var qualityValueRaw);
+        if (!hasRateControl && !hasQualityValue)
+        {
+            encoder = baseEncoder;
+            error = "";
+            return true;
+        }
+
+        if (hasRateControl != hasQualityValue)
+        {
+            encoder = baseEncoder;
+            error = "--rate-control 与 --quality-value 必须成对提供。";
+            return false;
+        }
+
+        var rateControl = rateControlRaw?.Trim().ToUpperInvariant() ?? "";
+        var qualityValue = qualityValueRaw?.Trim() ?? "";
+        if (rateControl is not ("CQP" or "VBR"))
+        {
+            encoder = baseEncoder;
+            error = $"--rate-control 无效：{rateControl}（可用：CQP/VBR）";
+            return false;
+        }
+
+        if (!int.TryParse(qualityValue, out var value)
+            || value < EncoderProfile.QualityValueMin
+            || value > EncoderProfile.QualityValueMax)
+        {
+            encoder = baseEncoder;
+            error = $"--quality-value 无效：{qualityValue}（应为 {EncoderProfile.QualityValueMin}..{EncoderProfile.QualityValueMax} 的整数）";
+            return false;
+        }
+
+        encoder = baseEncoder.WithRateControl(rateControl, value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        error = "";
+        return true;
     }
 }
