@@ -16,7 +16,7 @@ namespace TvaiStudio;
 internal sealed class StudioForm : Form
 {
     private const int DesignWidth = 1000;
-    private const int DesignHeight = 676;
+    private const int DesignHeight = 718;
     private const int OuterMargin = 12;
 
     /// <summary>显示器 DPI / 96；所有设计坐标乘以此值（字体用磅值，不再乘）。</summary>
@@ -204,7 +204,8 @@ internal sealed class StudioForm : Form
         gbModel.Controls.Add(_chkForceCfr);
 
         // 参数区：固定 6 行，随模型/模式更新标签与值域。
-        var gbParams = new GroupBox { Text = "参数（手动 = 绝对值；相对 = 相对自动的偏移，0 为中性）", Bounds = R(OuterMargin, 132, InnerWidth, 200) };
+        // 行距 32（滑条 26 高 + 6 间隙）：内容到 232，组高 242。
+        var gbParams = new GroupBox { Text = "参数（手动 = 绝对值；相对 = 相对自动的偏移，0 为中性）", Bounds = R(OuterMargin, 132, InnerWidth, 242) };
         Controls.Add(gbParams);
 
         _lblParamHint.Bounds = R(12, 22, InnerWidth - 24, 18);
@@ -225,6 +226,10 @@ internal sealed class StudioForm : Form
                 TickStyle = TickStyle.None,
                 Bounds = R(268, top, 560, 26),
                 Value = 500,
+                // TrackBar.AutoSize 默认 true，会无视 Bounds 的 26px 高度强制约 45px 的
+                // 首选高度：第一行滑条把后续行全部盖住，视觉上只剩第一行有滑条（其余
+                // 只能调数字）。关掉 AutoSize 让 Bounds 生效。
+                AutoSize = false,
             };
             var number = new NumericUpDown
             {
@@ -244,11 +249,11 @@ internal sealed class StudioForm : Form
             _numbers[name] = number;
             gbParams.Controls.Add(slider);
             gbParams.Controls.Add(number);
-            top += 25;
+            top += 32;
         }
 
-        // 批量队列
-        var gbQueue = new GroupBox { Text = "批量队列（可拖放文件到窗口）", Bounds = R(OuterMargin, 336, InnerWidth, 172) };
+        // 批量队列（参数区加高 42，整体下移）
+        var gbQueue = new GroupBox { Text = "批量队列（可拖放文件到窗口）", Bounds = R(OuterMargin, 378, InnerWidth, 172) };
         Controls.Add(gbQueue);
 
         _btnAddFiles.Text = "添加文件…";
@@ -288,27 +293,27 @@ internal sealed class StudioForm : Form
 
         // 执行行
         _btnStart.Text = "开始编码队列";
-        _btnStart.Bounds = R(OuterMargin, 514, 140, 30);
+        _btnStart.Bounds = R(OuterMargin, 556, 140, 30);
         _btnStart.Click += (_, _) => StartQueue();
         Controls.Add(_btnStart);
 
         _btnCancel.Text = "取消";
-        _btnCancel.Bounds = R(OuterMargin + 150, 514, 80, 30);
+        _btnCancel.Bounds = R(OuterMargin + 150, 556, 80, 30);
         _btnCancel.Enabled = false;
         _btnCancel.Click += (_, _) => CancelQueue();
         Controls.Add(_btnCancel);
 
-        _progress.Bounds = R(OuterMargin + 240, 518, InnerWidth - 240, 22);
+        _progress.Bounds = R(OuterMargin + 240, 560, InnerWidth - 240, 22);
         _progress.Minimum = 0;
         _progress.Maximum = 1000;
         Controls.Add(_progress);
 
-        _lblProgress.Bounds = R(OuterMargin, 548, InnerWidth, 18);
+        _lblProgress.Bounds = R(OuterMargin, 590, InnerWidth, 18);
         _lblProgress.ForeColor = Color.DimGray;
         _lblProgress.AutoEllipsis = true;
         Controls.Add(_lblProgress);
 
-        _log.Bounds = R(OuterMargin, 570, InnerWidth, DesignHeight - 570 - OuterMargin);
+        _log.Bounds = R(OuterMargin, 612, InnerWidth, DesignHeight - 612 - OuterMargin);
         _log.Multiline = true;
         _log.ReadOnly = true;
         _log.ScrollBars = ScrollBars.Vertical;
@@ -388,14 +393,19 @@ internal sealed class StudioForm : Form
     private void RefreshParameters()
     {
         var model = SelectedModel();
+        var mode = SelectedMode();
         var specs = CurrentSpecs();
         var hasManualParameters = model is null || model.Parameters.Count > 0;
+        // 自动模式下参数由 Topaz 自行估计、随附值会被忽略：置灰避免误导（此前可编辑但静默无效）。
+        var parametersEditable = hasManualParameters && mode != "auto";
 
         _lblParamHint.Text = !hasManualParameters
             ? "该模型定义中没有可调参数（自动/相对模式仍可用）。"
-            : SelectedMode() == "relative"
-                ? "相对模式：滑条范围 ±1，0 = 中性（在自动基线上做偏移）。"
-                : "手动模式：数值为模型原生单位；滑条在值域内线性映射。";
+            : mode == "auto"
+                ? "自动模式：6 个参数由 Topaz 估计器自行估计，无需手动设置。"
+                : mode == "relative"
+                    ? "相对模式：滑条范围 ±1，0 = 中性（在自动基线上做偏移）。"
+                    : "手动模式：数值为模型原生单位；滑条在值域内线性映射。";
 
         _syncingParameters = true;
         foreach (var spec in specs)
@@ -403,7 +413,7 @@ internal sealed class StudioForm : Form
             if (_paramLabels.TryGetValue(spec.Name, out var label))
             {
                 label.Text = $"{spec.GuiName}（{spec.Name}）";
-                label.ForeColor = hasManualParameters ? SystemColors.ControlText : SystemColors.GrayText;
+                label.ForeColor = parametersEditable ? SystemColors.ControlText : SystemColors.GrayText;
             }
 
             if (!_sliders.TryGetValue(spec.Name, out var slider) || !_numbers.TryGetValue(spec.Name, out var number))
@@ -411,8 +421,8 @@ internal sealed class StudioForm : Form
                 continue;
             }
 
-            slider.Enabled = hasManualParameters;
-            number.Enabled = hasManualParameters;
+            slider.Enabled = parametersEditable;
+            number.Enabled = parametersEditable;
             number.Minimum = (decimal)spec.Min;
             number.Maximum = (decimal)spec.Max;
             number.Value = (decimal)Math.Clamp(spec.Default, spec.Min, spec.Max);
