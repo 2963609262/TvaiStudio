@@ -18,7 +18,7 @@ internal sealed class StudioForm : Form
 {
     private const int DesignWidth = 1000;
     private const int DesignHeight = 676;
-    private const int Margin = 12;
+    private const int OuterMargin = 12;
 
     /// <summary>显示器 DPI / 96；所有设计坐标乘以此值（字体用磅值，不再乘）。</summary>
     private float _scale = 1f;
@@ -28,7 +28,7 @@ internal sealed class StudioForm : Form
     private Rectangle R(int x, int y, int width, int height)
         => new(S(x), S(y), S(width), S(height));
 
-    private int InnerWidth => DesignWidth - Margin * 2;
+    private int InnerWidth => DesignWidth - OuterMargin * 2;
 
     private readonly StudioSettings _settings;
     private TopazModelCatalog _catalog;
@@ -73,7 +73,6 @@ internal sealed class StudioForm : Form
 
     private CancellationTokenSource? _cancellation;
     private bool _running;
-    private bool _scaled;
 
     public StudioForm()
     {
@@ -132,16 +131,16 @@ internal sealed class StudioForm : Form
     private void BuildLayout()
     {
         // 环境行
-        _lblEnv.Bounds = R(Margin, 12, InnerWidth - 150, 20);
+        _lblEnv.Bounds = R(OuterMargin, 12, InnerWidth - 150, 20);
         _lblEnv.AutoEllipsis = true;
         _btnBrowseFfmpeg.Text = "指定 Topaz ffmpeg…";
-        _btnBrowseFfmpeg.Bounds = R(Margin + InnerWidth - 138, 9, 138, 26);
+        _btnBrowseFfmpeg.Bounds = R(OuterMargin + InnerWidth - 138, 9, 138, 26);
         _btnBrowseFfmpeg.Click += (_, _) => BrowseTopazFfmpeg();
         Controls.Add(_lblEnv);
         Controls.Add(_btnBrowseFfmpeg);
 
         // 模型与模式
-        var gbModel = new GroupBox { Text = "模型与模式", Bounds = R(Margin, 36, InnerWidth, 92) };
+        var gbModel = new GroupBox { Text = "模型与模式", Bounds = R(OuterMargin, 36, InnerWidth, 92) };
         Controls.Add(gbModel);
 
         AddLabel(gbModel, "模型", 12, 24, 40);
@@ -206,7 +205,7 @@ internal sealed class StudioForm : Form
         gbModel.Controls.Add(_chkForceCfr);
 
         // 参数区：固定 6 行，随模型/模式更新标签与值域。
-        var gbParams = new GroupBox { Text = "参数（手动 = 绝对值；相对 = 相对自动的偏移，0 为中性）", Bounds = R(Margin, 132, InnerWidth, 200) };
+        var gbParams = new GroupBox { Text = "参数（手动 = 绝对值；相对 = 相对自动的偏移，0 为中性）", Bounds = R(OuterMargin, 132, InnerWidth, 200) };
         Controls.Add(gbParams);
 
         _lblParamHint.Bounds = R(12, 22, InnerWidth - 24, 18);
@@ -250,7 +249,7 @@ internal sealed class StudioForm : Form
         }
 
         // 批量队列
-        var gbQueue = new GroupBox { Text = "批量队列（可拖放文件到窗口）", Bounds = R(Margin, 336, InnerWidth, 172) };
+        var gbQueue = new GroupBox { Text = "批量队列（可拖放文件到窗口）", Bounds = R(OuterMargin, 336, InnerWidth, 172) };
         Controls.Add(gbQueue);
 
         _btnAddFiles.Text = "添加文件…";
@@ -290,27 +289,27 @@ internal sealed class StudioForm : Form
 
         // 执行行
         _btnStart.Text = "开始编码队列";
-        _btnStart.Bounds = R(Margin, 514, 140, 30);
+        _btnStart.Bounds = R(OuterMargin, 514, 140, 30);
         _btnStart.Click += (_, _) => StartQueue();
         Controls.Add(_btnStart);
 
         _btnCancel.Text = "取消";
-        _btnCancel.Bounds = R(Margin + 150, 514, 80, 30);
+        _btnCancel.Bounds = R(OuterMargin + 150, 514, 80, 30);
         _btnCancel.Enabled = false;
         _btnCancel.Click += (_, _) => CancelQueue();
         Controls.Add(_btnCancel);
 
-        _progress.Bounds = R(Margin + 240, 518, InnerWidth - 240, 22);
+        _progress.Bounds = R(OuterMargin + 240, 518, InnerWidth - 240, 22);
         _progress.Minimum = 0;
         _progress.Maximum = 1000;
         Controls.Add(_progress);
 
-        _lblProgress.Bounds = R(Margin, 548, InnerWidth, 18);
+        _lblProgress.Bounds = R(OuterMargin, 548, InnerWidth, 18);
         _lblProgress.ForeColor = Color.DimGray;
         _lblProgress.AutoEllipsis = true;
         Controls.Add(_lblProgress);
 
-        _log.Bounds = R(Margin, 570, InnerWidth, DesignHeight - 570 - Margin);
+        _log.Bounds = R(OuterMargin, 570, InnerWidth, DesignHeight - 570 - OuterMargin);
         _log.Multiline = true;
         _log.ReadOnly = true;
         _log.ScrollBars = ScrollBars.Vertical;
