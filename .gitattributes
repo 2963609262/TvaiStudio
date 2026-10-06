@@ -1,0 +1,12 @@
+# 默认按文本处理，仓库内统一 LF
+* text=auto
+
+# 共享内核必须与源仓库逐字节一致：MANIFEST.json 记录的是同步时刻的 SHA-256，
+# 任何 EOL 转换都会让校验失败，因此禁用这两处的换行转换。
+third_party/videoenhancer-core/** -text
+tools/sync-tvai-core.ps1 -text
+
+# 二进制/资源不做文本转换
+*.png binary
+*.jpg binary
+*.ico binary
