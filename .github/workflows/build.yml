@@ -36,7 +36,7 @@ jobs:
           if ($bad -gt 0) { throw "共享内核与 MANIFEST 不一致（$bad 项）。" }
           Write-Host "共享内核 $($manifest.files.Count) 个文件与 MANIFEST 一致。"
 
-      # 与源仓库逐文件比对需要 VideoEnhancer 检出，故仅在提供了该检出时运行。
+      # 与上游逐文件比对需要检出上游仓库，故仅在提供了该检出时运行。
       - name: Sync against source repo (optional)
         if: ${{ env.TVAISTUDIO_CORE_SOURCE != '' }}
         shell: pwsh

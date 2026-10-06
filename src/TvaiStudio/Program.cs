@@ -11,7 +11,8 @@ namespace TvaiStudio;
 ///   tvaistudio --self-test                     探测 Topaz/模型目录并打印结论（退出码 0/3）
 ///   tvaistudio --models                        列出模型与本地权重（JSON）
 ///   tvaistudio --check --model=rhea-1          校验模型权重（缺权重退出码 3）
-///   tvaistudio --estimate --model=rhea-1 --input=in.mp4
+///   tvaistudio --estimate-only --model=rhea-1 --input=in.mp4
+///   tvaistudio --batch --input=a.mp4 --input=b.mp4 --output-dir=out --model=rhea-1
 ///   tvaistudio --encode --input=in.mp4 --output=out.mp4 --model=rhea-1 --mode=auto --encoder=hevc
 ///   tvaistudio --export-preset=out.json --model=rhea-1 --mode=auto --encoder=hevc
 /// </summary>
@@ -325,9 +326,6 @@ internal static class Program
             ParseNullableInt(options.GetValueOrDefault("--height", "")),
             null,
             null,
-            null,
-            null,
-            null,
             encoder,
             options.ContainsKey("--force-cfr"));
 
@@ -454,7 +452,7 @@ internal static class Program
 
             var request = new EncodeRequest(
                 input, output, model, mode, estimateFrames, scale, width, height,
-                null, null, null, null, null, encoder, forceCfr);
+                null, null, encoder, forceCfr);
 
             var exitCode = pipeline.Run(
                 request,
@@ -471,7 +469,7 @@ internal static class Program
             if (exitCode == EncodePipeline.CancelledExitCode)
             {
                 cancelled += inputs.Count - index;
-                DeletePartialOutput(output);
+                EncodePipeline.DeletePartialOutput(output);
                 Console.WriteLine("[tvaistudio]   已取消（进程树已终止）");
                 break;
             }
@@ -489,22 +487,6 @@ internal static class Program
 
         Console.WriteLine($"[tvaistudio] 批量结束：成功 {succeeded}，失败 {failed}，取消 {cancelled}");
         return failed > 0 ? 1 : ExitOk;
-    }
-
-    /// <summary>取消后删除被中断的产物（半成品文件对用户是误导，且 0 字节文件会干扰后续命名去重）。</summary>
-    private static void DeletePartialOutput(string output)
-    {
-        try
-        {
-            if (File.Exists(output))
-            {
-                File.Delete(output);
-            }
-        }
-        catch
-        {
-            // 文件被占用等情况下保留；不因清理失败影响退出码。
-        }
     }
 
     private static int ExportPreset(
@@ -617,7 +599,7 @@ internal static class Program
         Console.WriteLine("           [--encoder=h264|hevc|av1] [--estimate=N] [--scale=N] [--width=N --height=N] [--force-cfr]");
         Console.WriteLine("  --batch --input=<f1> [--input=<f2> …] [--input-dir=<dir>] --output-dir=<dir> --model=<id>");
         Console.WriteLine("           批量编码（与界面队列同一语义；Ctrl+C 取消并终止进程树）");
-        Console.WriteLine("  --export-preset=<file> --model=<id> [--mode=<m>] [--encoder=<k>]   导出 3FUI 预设");
+        Console.WriteLine("  --export-preset=<file> --model=<id> [--mode=<m>] [--encoder=<k>]   导出预设文件（JSON）");
         Console.WriteLine();
         Console.WriteLine("退出码：0 成功；2 用法/配置错误；3 缺少依赖（Topaz ffmpeg 或权重）；其余为 ffmpeg 原始退出码。");
     }

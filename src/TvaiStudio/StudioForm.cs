@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Runtime.InteropServices;
 using VideoEnhancer.Tvai;
 using VideoEnhancer.TvaiTuner;
 
@@ -751,7 +750,7 @@ internal sealed class StudioForm : Form
         var scale = (int)_numScale.Value;
         var forceCfr = _chkForceCfr.Checked;
         var manualValues = mode == "manual" ? CurrentManualValues() : null;
-        var relativeOffsets = mode == "relative" ? CurrentRelativeOffsets() : null;
+        var relativeOffsets = mode == "relative" ? CurrentManualValues() : null;
         var items = _queue.ToList();
 
         _running = true;
@@ -796,9 +795,6 @@ internal sealed class StudioForm : Form
                     null,
                     manualValues,
                     relativeOffsets,
-                    null,
-                    null,
-                    null,
                     encoder,
                     forceCfr);
 
@@ -821,7 +817,7 @@ internal sealed class StudioForm : Form
                 if (exitCode == EncodePipeline.CancelledExitCode)
                 {
                     cancelled += items.Count - index;
-                    DeletePartialOutput(item.Output);
+                    EncodePipeline.DeletePartialOutput(item.Output);
                     Post(() =>
                     {
                         item.Status = "已取消";
@@ -878,9 +874,6 @@ internal sealed class StudioForm : Form
 
         return values;
     }
-
-    private IReadOnlyDictionary<string, double> CurrentRelativeOffsets()
-        => CurrentManualValues();
 
     private void CancelQueue()
     {
@@ -988,22 +981,6 @@ internal sealed class StudioForm : Form
     {
         _cancellation?.Cancel();
         base.OnFormClosing(e);
-    }
-
-    /// <summary>取消后删除被中断的产物，避免留下 0 字节或半截文件误导用户。</summary>
-    private static void DeletePartialOutput(string output)
-    {
-        try
-        {
-            if (File.Exists(output))
-            {
-                File.Delete(output);
-            }
-        }
-        catch
-        {
-            // 文件被占用等情况下保留。
-        }
     }
 
     private sealed class QueueItem(string input, string output)

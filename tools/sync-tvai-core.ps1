@@ -35,12 +35,12 @@ if (-not (Test-Path -LiteralPath $SourceRepo)) {
 }
 
 # 同步清单：源仓库相对路径 → 本仓库文件名
+# 只同步本程序真正用到的内核文件；源仓库里供其路由器/编排器使用的 RouterConfig、
+# ChildProcessRelay 在本程序内没有引用，因此不同步。
 $coreFiles = @(
     @{ Source = 'orchestrator\TopazModelCatalog.cs';      Target = 'TopazModelCatalog.cs' },
     @{ Source = 'orchestrator\TvaiFilterComposer.cs';     Target = 'TvaiFilterComposer.cs' },
     @{ Source = 'orchestrator\AutoEstimator.cs';          Target = 'AutoEstimator.cs' },
-    @{ Source = 'router\RouterConfig.cs';                 Target = 'RouterConfig.cs' },
-    @{ Source = 'router\ChildProcessRelay.cs';            Target = 'ChildProcessRelay.cs' },
     @{ Source = 'router\JobObject.cs';                    Target = 'JobObject.cs' },
     @{ Source = 'tools\VideoEnhancer.TvaiTuner\EncoderProfile.cs'; Target = 'EncoderProfile.cs' },
     @{ Source = 'tools\VideoEnhancer.TvaiTuner\TunerViewModel.cs'; Target = 'TunerViewModel.cs' },

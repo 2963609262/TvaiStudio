@@ -20,9 +20,6 @@ internal sealed record EncodeRequest(
     int? TargetHeight,
     IReadOnlyDictionary<string, double>? ManualValues,
     IReadOnlyDictionary<string, double>? RelativeOffsets,
-    double? Prenoise,
-    double? Grain,
-    double? Gsize,
     EncoderProfile Encoder,
     bool ForceCfr);
 
@@ -38,9 +35,8 @@ internal sealed record EncodeProgress(
 /// <summary>
 /// 直接编码管线：把请求合成 tvai_up 滤镜串后调用 Topaz 自带 ffmpeg.exe。
 ///
-/// 与 VideoEnhancer 编排器的关系：滤镜串与编码参数由同一份共享内核（PresetWriter/EncoderProfile）
-/// 合成，因此「本程序直接编码的产物」与「导出预设经 3FUI 编码的产物」使用完全相同的写法；
-/// 本程序不需要 VideoEnhancer 的任何二进制。
+/// 滤镜串与编码参数由第三方内核（PresetWriter / EncoderProfile）合成，
+/// 因此「直接编码」与「导出预设后复用」两条路径使用完全相同的写法。
 ///
 /// 安全不变量：目标 EXE 由用户设置给出并做 File.Exists 校验；全部参数经 ArgumentList 逐项传递、
 /// UseShellExecute=false、CreateNoWindow=true —— 无 shell 参与、不做字符串拼接。
@@ -75,9 +71,9 @@ internal sealed class EncodePipeline
             request.TargetHeight,
             request.ManualValues,
             request.RelativeOffsets,
-            request.Prenoise,
-            request.Grain,
-            request.Gsize);
+            prenoise: null,
+            grain: null,
+            gsize: null);
 
         var arguments = new List<string>
         {
@@ -131,6 +127,25 @@ internal sealed class EncodePipeline
     /// <summary>把参数表拼成可读命令行（仅用于界面展示与日志，不用于执行）。</summary>
     public static string DescribeArguments(IReadOnlyList<string> arguments)
         => string.Join(' ', arguments.Select(Quote));
+
+    /// <summary>
+    /// 删除被取消的产物。半成品文件会误导用户，且 0 字节文件会干扰后续命名去重。
+    /// GUI 队列与无窗口批量共用此实现。
+    /// </summary>
+    public static void DeletePartialOutput(string output)
+    {
+        try
+        {
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
+        }
+        catch
+        {
+            // 文件被占用等情况下保留；不因清理失败影响退出码。
+        }
+    }
 
     /// <summary>
     /// 执行一次编码。<paramref name="cancellation"/> 触发时按进程树终止（Topaz ffmpeg 会拉起子进程）。

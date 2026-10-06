@@ -1,13 +1,11 @@
 using System.Text;
 using System.Text.Json;
-using VideoEnhancer.Tvai;
 
 namespace TvaiStudio;
 
 /// <summary>
-/// TvaiStudio 自身设置（与 VideoEnhancer 的路由器配置同结构，但用自己的文件名，
-/// 因此本程序完全不依赖 VideoEnhancer 的部署布局）。
-/// 路径来源：自动探测（Topaz 默认安装位置）→ 用户显式指定 → 保存到 tvaistudio.config.json。
+/// TvaiStudio 自身设置，保存到 EXE 同目录的 <c>tvaistudio.config.json</c>。
+/// 路径来源：自动探测（Topaz 默认安装位置）→ 用户显式指定 → 落盘。
 /// </summary>
 internal sealed class StudioSettings
 {
@@ -102,7 +100,7 @@ internal sealed class StudioSettings
         }
     }
 
-    /// <summary>供共享内核 RouterConfig 使用的环境变量表（TVAI_* 缺一不可，否则 Topaz 报 Model not found）。</summary>
+    /// <summary>供子进程使用的环境变量表（TVAI_* 缺一不可，否则 Topaz 报 Model not found）。</summary>
     public Dictionary<string, string> BuildEnvironmentVariables()
     {
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

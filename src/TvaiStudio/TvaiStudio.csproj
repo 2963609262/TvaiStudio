@@ -13,8 +13,9 @@
     <NeutralLanguage>zh-Hans</NeutralLanguage>
   </PropertyGroup>
 
-  <!-- 与 VideoEnhancer 的路由器/编排器同套发布参数；WinForms 不能裁剪。 -->
-  <PropertyGroup Label="Publish">
+  <!-- 单文件自包含发布参数只在 Release 生效：否则普通 dotnet build 也会按 RID 自包含构建，
+       既拖慢本地与 CI 的构建，也会顺带关掉 Debug 的 PDB 生成。WinForms 不能裁剪。 -->
+  <PropertyGroup Label="Publish" Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -24,11 +25,11 @@
   </PropertyGroup>
 
   <!--
-    共享内核：由 tools/sync-tvai-core.ps1 从 VideoEnhancer 仓库同步而来，
-    逐文件 SHA-256 记录在 third_party/videoenhancer-core/MANIFEST.json。
-    不要直接编辑这些文件——在 VideoEnhancer 仓库修改后重跑同步脚本。
+    第三方内核：由 tools/sync-tvai-core.ps1 同步而来，逐文件 SHA-256 记录在
+    third_party/videoenhancer-core/MANIFEST.json。不要直接编辑这些文件——
+    在来源仓库修改后重跑同步脚本。
   -->
-  <ItemGroup Label="Synced shared core (do not edit in place)">
+  <ItemGroup Label="Synced third-party core (do not edit in place)">
     <Compile Include="..\..\third_party\videoenhancer-core\*.cs" />
     <EmbeddedResource Include="..\..\third_party\videoenhancer-core\PresetTemplate.json" />
   </ItemGroup>
