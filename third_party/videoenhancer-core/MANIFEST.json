@@ -1,0 +1,59 @@
+{
+    "description":  "Shared tvai core synced from the VideoEnhancer repository (single implementation; do not edit in place)",
+    "sourceRepo":  "D:/code/VideoEnhancer/VideoEnhancer",
+    "sourceCommit":  "eb9eda804e3d7c7ad4c6a7cba3498c52c483a171",
+    "syncedAtUtc":  "2026-10-06T09:40:35Z",
+    "fileCount":  10,
+    "files":  [
+                  {
+                      "file":  "TopazModelCatalog.cs",
+                      "sourcePath":  "orchestrator/TopazModelCatalog.cs",
+                      "sha256":  "948ef444607be08926904e13b1cc7e5a833a60282f4ed679d6574e8529670cdd"
+                  },
+                  {
+                      "file":  "TvaiFilterComposer.cs",
+                      "sourcePath":  "orchestrator/TvaiFilterComposer.cs",
+                      "sha256":  "c4e63cb3f58c7e158a9fe337d53a296c4bfc49718429eed8c91b8ec055d43211"
+                  },
+                  {
+                      "file":  "AutoEstimator.cs",
+                      "sourcePath":  "orchestrator/AutoEstimator.cs",
+                      "sha256":  "7c2a94b934079a451f5548a0128c3ba10640973a0e11633aee0fc8eb2cc15cf0"
+                  },
+                  {
+                      "file":  "RouterConfig.cs",
+                      "sourcePath":  "router/RouterConfig.cs",
+                      "sha256":  "d92f3fc0538d295fa0a693cb51e15b6c941f9e585144e89c95fe05335179c2b1"
+                  },
+                  {
+                      "file":  "ChildProcessRelay.cs",
+                      "sourcePath":  "router/ChildProcessRelay.cs",
+                      "sha256":  "58d779cc1060c2ac5f71454932c4e2f40480dcf3e043aca6ef7c63561801f0aa"
+                  },
+                  {
+                      "file":  "JobObject.cs",
+                      "sourcePath":  "router/JobObject.cs",
+                      "sha256":  "9179e9ea373decbe240bc793ce37a8fddab07f9f6f9c29027b27d4d6169e6247"
+                  },
+                  {
+                      "file":  "EncoderProfile.cs",
+                      "sourcePath":  "tools/VideoEnhancer.TvaiTuner/EncoderProfile.cs",
+                      "sha256":  "187d474c7407ab23bf6dfc1c1e943885f15f7ff684aae0025143f16d576e0d65"
+                  },
+                  {
+                      "file":  "TunerViewModel.cs",
+                      "sourcePath":  "tools/VideoEnhancer.TvaiTuner/TunerViewModel.cs",
+                      "sha256":  "0e367f75567ab6b4e20642bdafaf93e13f6608825e49da265d542c993c16f0f1"
+                  },
+                  {
+                      "file":  "PresetWriter.cs",
+                      "sourcePath":  "tools/VideoEnhancer.TvaiTuner/PresetWriter.cs",
+                      "sha256":  "68c6a84c551347854e2eb5e87f7fa680446b97a1ff2d569b3bf0150a37cdc731"
+                  },
+                  {
+                      "file":  "PresetTemplate.json",
+                      "sourcePath":  "tools/VideoEnhancer.TvaiTuner/PresetTemplate.json",
+                      "sha256":  "c3e4422a7ff21e0fffa1cce3bda3e0506f99b4cb87894a50208733dd2058c64b"
+                  }
+              ]
+}

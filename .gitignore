@@ -1,0 +1,20 @@
+# .NET / MSBuild 构建产物
+[Bb]in/
+[Oo]bj/
+
+# 发布与本地产物
+[Oo]ut/
+[Dd]ist/
+[Pp]ublish/
+.publish/
+.vs/
+*.user
+
+# 本程序自身的设置与日志（含本机路径）
+tvaistudio.config.json
+*.log
+
+# 通用防护
+*.dmp
+.env
+.env.*

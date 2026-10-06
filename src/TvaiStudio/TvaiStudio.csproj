@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Project">
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>tvaistudio</AssemblyName>
+    <RootNamespace>TvaiStudio</RootNamespace>
+    <Version>1.0.0</Version>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <NeutralLanguage>zh-Hans</NeutralLanguage>
+  </PropertyGroup>
+
+  <!-- 与 VideoEnhancer 的路由器/编排器同套发布参数；WinForms 不能裁剪。 -->
+  <PropertyGroup Label="Publish">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <!--
+    共享内核：由 tools/sync-tvai-core.ps1 从 VideoEnhancer 仓库同步而来，
+    逐文件 SHA-256 记录在 third_party/videoenhancer-core/MANIFEST.json。
+    不要直接编辑这些文件——在 VideoEnhancer 仓库修改后重跑同步脚本。
+  -->
+  <ItemGroup Label="Synced shared core (do not edit in place)">
+    <Compile Include="..\..\third_party\videoenhancer-core\*.cs" />
+    <EmbeddedResource Include="..\..\third_party\videoenhancer-core\PresetTemplate.json" />
+  </ItemGroup>
+
+</Project>
