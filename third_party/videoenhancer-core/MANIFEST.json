@@ -1,14 +1,14 @@
 {
     "description":  "Shared tvai core synced from the VideoEnhancer repository (single implementation; do not edit in place)",
     "sourceRepo":  "D:/code/VideoEnhancer/VideoEnhancer",
-    "sourceCommit":  "8a228245c678009c8c4b6f835cda3008d0e8829c",
-    "syncedAtUtc":  "2026-10-06T12:04:54Z",
+    "sourceCommit":  "270456461dedfbc5716bfc738c51454b2bcc5644",
+    "syncedAtUtc":  "2026-10-06T13:00:30Z",
     "fileCount":  8,
     "files":  [
                   {
                       "file":  "TopazModelCatalog.cs",
                       "sourcePath":  "orchestrator/TopazModelCatalog.cs",
-                      "sha256":  "948ef444607be08926904e13b1cc7e5a833a60282f4ed679d6574e8529670cdd"
+                      "sha256":  "035cf6d96709b169f3886303811140af034451752ccaaaf8eb2de6c119cb07cd"
                   },
                   {
                       "file":  "TvaiFilterComposer.cs",

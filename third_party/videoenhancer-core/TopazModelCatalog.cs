@@ -32,6 +32,15 @@ internal sealed class TvaiModel
     /// <summary>自动参数估计器（如 prap-3 / nap-3）；空=该模型不支持自动/相对模式。</summary>
     public required string AutoModel { get; init; }
 
+    /// <summary>模型 json 的 <c>changesFPS</c>：该模型会改变帧率（补帧/慢动作）。</summary>
+    public bool ChangesFps { get; init; }
+
+    /// <summary>模型 json 的 <c>interlacedFrames</c>：该模型面向隔行素材（去隔行）。</summary>
+    public bool Interlaced { get; init; }
+
+    /// <summary>模型 json 的 <c>enabled</c>：0 表示 Topaz 自身已停用该模型。</summary>
+    public bool Enabled { get; init; } = true;
+
     public required List<TvaiParameter> Parameters { get; init; }
 
     public string WeightFilePrefix => $"{ShortName}-v{Version}-";
@@ -162,6 +171,12 @@ internal sealed class TopazModelCatalog
                 DisplayName = displayName,
                 ModelType = modelType,
                 AutoModel = autoModel,
+                ChangesFps = ReadFlag(root, "changesFPS"),
+                Interlaced = ReadFlag(root, "interlacedFrames"),
+                Enabled = !root.TryGetProperty("enabled", out var enabledElement)
+                          || enabledElement.ValueKind != JsonValueKind.Number
+                          || !enabledElement.TryGetInt32(out var enabledValue)
+                          || enabledValue != 0,
                 Parameters = parameters,
             };
         }
@@ -205,4 +220,11 @@ internal sealed class TopazModelCatalog
         => item.TryGetProperty(name, out var element) && element.TryGetDouble(out var value)
             ? value
             : fallback;
+
+    /// <summary>读取 0/1 形式的布尔标记；缺失或非数值一律视为 false。</summary>
+    private static bool ReadFlag(JsonElement item, string name)
+        => item.TryGetProperty(name, out var element)
+           && element.ValueKind == JsonValueKind.Number
+           && element.TryGetInt32(out var value)
+           && value != 0;
 }
