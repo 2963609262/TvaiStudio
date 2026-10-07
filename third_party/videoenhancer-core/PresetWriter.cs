@@ -29,13 +29,27 @@ internal static class PresetWriter
         int? TargetHeight,
         IReadOnlyDictionary<string, double>? ManualValues,
         IReadOnlyDictionary<string, double>? RelativeOffsets,
-        double? Prenoie,
+        double? Prenoise,
         double? Grain,
         double? Gsize,
+        string? Parameters,
         EncoderProfile Encoder,
         bool ForceCfr,
         string PresetName,
         string ExportDirectory);
+
+    // tvai_up 滤镜对这三个选项是硬拒绝（实测：越界直接报 "Value x for parameter 'y' out of
+    // range [a - b]" 且进程退出非 0，不是静默截断），因此 UI 侧与编排器侧都要按此钳制，
+    // 否则用户填一个 0.5 的 prenoise 会得到一次失败的编码而不是一个可用的值。
+    public const double PrenoiseMin = 0.0;
+    public const double PrenoiseMax = 0.1;
+    public const double GrainMin = 0.0;
+    public const double GrainMax = 1.0;
+    public const double GsizeMin = 0.0;
+    public const double GsizeMax = 5.0;
+
+    public static double? Clamp(double? value, double min, double max)
+        => value is null ? null : Math.Min(max, Math.Max(min, value.Value));
 
     public sealed record ExportResult(string Path, string FilterToken, string LastArguments);
 
@@ -123,9 +137,10 @@ internal static class PresetWriter
             request.TargetWidth,
             request.TargetHeight,
             request.ManualValues,
-            request.Prenoie,
-            request.Grain,
-            request.Gsize);
+            Clamp(request.Prenoise, PrenoiseMin, PrenoiseMax),
+            Clamp(request.Grain, GrainMin, GrainMax),
+            Clamp(request.Gsize, GsizeMin, GsizeMax),
+            request.Parameters);
 
     /// <summary>
     /// 合成 tvai_up 滤镜串。预设导出与「直接编码」共用本方法，
@@ -140,8 +155,14 @@ internal static class PresetWriter
         IReadOnlyDictionary<string, double>? manualValues,
         double? prenoise,
         double? grain,
-        double? gsize)
+        double? gsize,
+        string? parameters = null)
     {
+        // 越界会被 tvai_up 硬拒（见常量处注释），这里统一钳制到实测值域。
+        prenoise = Clamp(prenoise, PrenoiseMin, PrenoiseMax);
+        grain = Clamp(grain, GrainMin, GrainMax);
+        gsize = Clamp(gsize, GsizeMin, GsizeMax);
+
         // 注意：tvai_up 的 scale 不接受 "0:w=W:h=H" 这种 ffmpeg 通用写法——实测会被静默忽略，
         // 仍按模型原生倍率输出（例如请求 800x600 得到 1280x960）。要精确目标尺寸必须在
         // tvai_up 之后串一个标准 scale 滤镜（已实测 tvai_up=...,scale=w=W:h=H → 800x600）。
@@ -160,6 +181,14 @@ internal static class PresetWriter
         if (gsize is not null)
         {
             token += $":gsize={Format(gsize.Value)}";
+        }
+
+        // parameters= 是 Topaz 的自由串通道（例如 grain_sigma / grain_type），必须整体作为一个
+        // 选项值下发：内部的 ':' 要写成 '\:'，否则会被当成选项分隔符而解析失败。
+        // 实测 parameters='grain_sigma=0.42\:grain_type=silver_rich' 经预设链路透传正常。
+        if (!string.IsNullOrWhiteSpace(parameters))
+        {
+            token += $":parameters='{parameters}'";
         }
 
         if (mode == "manual" && manualValues is not null)
@@ -234,7 +263,8 @@ internal static class PresetWriter
         IReadOnlyDictionary<string, double>? relativeOffsets,
         double? prenoise,
         double? grain,
-        double? gsize)
+        double? gsize,
+        string? parameters = null)
     {
         var token = ComposeFilterToken(
             model,
@@ -245,7 +275,8 @@ internal static class PresetWriter
             mode == "manual" ? manualValues : null,
             prenoise,
             grain,
-            gsize);
+            gsize,
+            parameters);
 
         if (mode == "manual")
         {

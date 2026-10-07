@@ -1,8 +1,8 @@
 {
     "description":  "Shared tvai core synced from the VideoEnhancer repository (single implementation; do not edit in place)",
     "sourceRepo":  "D:/code/VideoEnhancer/VideoEnhancer",
-    "sourceCommit":  "c08b161c1074cfd44ee8d0e30962b1ca352446db",
-    "syncedAtUtc":  "2026-10-06T19:57:48Z",
+    "sourceCommit":  "9cb70eacae9d22c457a4b23d139ab7e875e2a41d",
+    "syncedAtUtc":  "2026-10-07T14:15:47Z",
     "fileCount":  8,
     "files":  [
                   {
@@ -38,7 +38,7 @@
                   {
                       "file":  "PresetWriter.cs",
                       "sourcePath":  "tools/VideoEnhancer.TvaiTuner/PresetWriter.cs",
-                      "sha256":  "68c6a84c551347854e2eb5e87f7fa680446b97a1ff2d569b3bf0150a37cdc731"
+                      "sha256":  "577da61d4b57046198affad2c998fbfc6b6b6c2f15c9819419f7d5a47db0eb19"
                   },
                   {
                       "file":  "PresetTemplate.json",
