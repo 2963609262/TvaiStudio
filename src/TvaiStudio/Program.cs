@@ -544,6 +544,7 @@ internal static class Program
             null,
             null,
             null,
+            null,
             encoder,
             options.ContainsKey("--force-cfr"),
             Path.GetFileNameWithoutExtension(presetPath),

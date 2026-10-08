@@ -27,6 +27,23 @@ internal sealed class TvaiModel
 
     public required string DisplayName { get; init; }
 
+    /// <summary>
+    /// 家族名（取自模型 json 的 <c>gui.name</c> 在 " - " 之前的部分，如 "Artemis"、"Rhea"）。
+    /// 没有 gui.name 时回退到 <see cref="DisplayName"/>。
+    /// </summary>
+    public string FamilyDisplayName { get; init; } = "";
+
+    /// <summary>
+    /// 质量档位（取自 <c>gui.name</c> 在 " - " 之后的部分，如 "High Quality"、"Low Quality"）。
+    /// 空=该家族只有一个变体。
+    /// </summary>
+    /// <remarks>
+    /// 为什么需要：Topaz 的顶层 <c>displayName</c> 对某些模型字面就是 "High Quality" /
+    /// "Low Quality" / "Medium Quality"（ahq-*/alq-*/amq-*/ghq-5），直接显示会让用户看到
+    /// 一堆无家族信息的同名项。gui.name 才是「Artemis - High Quality」这种完整名。
+    /// </remarks>
+    public string QualityTier { get; init; } = "";
+
     public required int ModelType { get; init; }
 
     /// <summary>自动参数估计器（如 prap-3 / nap-3）；空=该模型不支持自动/相对模式。</summary>
@@ -139,6 +156,33 @@ internal sealed class TopazModelCatalog
                 ? (displayElement.GetString() ?? id)
                 : id;
 
+            // gui.name 形如 "Artemis - High Quality" / "Rhea - Medium Quality"：
+            // 拆成家族名 + 质量档位，让 UI 能按「家族 ▸ 档位」两级呈现，
+            // 而不是摆一排孤立的 "High Quality"。取最后一个 " - " 作分隔，
+            // 以兼容名字里本身带连字符的情况。
+            var familyDisplayName = displayName;
+            var qualityTier = "";
+            if (root.TryGetProperty("gui", out var guiElement)
+                && guiElement.ValueKind == JsonValueKind.Object
+                && guiElement.TryGetProperty("name", out var guiNameElement)
+                && guiNameElement.ValueKind == JsonValueKind.String)
+            {
+                var guiName = (guiNameElement.GetString() ?? "").Trim();
+                if (guiName.Length > 0)
+                {
+                    var separator = guiName.LastIndexOf(" - ", StringComparison.Ordinal);
+                    if (separator > 0)
+                    {
+                        familyDisplayName = guiName[..separator].Trim();
+                        qualityTier = guiName[(separator + 3)..].Trim();
+                    }
+                    else
+                    {
+                        familyDisplayName = guiName;
+                    }
+                }
+            }
+
             var modelType = root.TryGetProperty("modelType", out var typeElement)
                             && typeElement.TryGetInt32(out var typeValue)
                 ? typeValue
@@ -169,6 +213,8 @@ internal sealed class TopazModelCatalog
                 ShortName = shortName,
                 Version = version,
                 DisplayName = displayName,
+                FamilyDisplayName = familyDisplayName,
+                QualityTier = qualityTier,
                 ModelType = modelType,
                 AutoModel = autoModel,
                 ChangesFps = ReadFlag(root, "changesFPS"),

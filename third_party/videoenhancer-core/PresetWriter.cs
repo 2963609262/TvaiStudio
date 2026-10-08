@@ -36,6 +36,7 @@ internal static class PresetWriter
         int? Kcolor,
         double? Blend,
         InterpolationSettings? Interpolation,
+        IReadOnlyList<ExtraModelStage>? ExtraModels,
         EncoderProfile Encoder,
         bool ForceCfr,
         string PresetName,
@@ -156,7 +157,8 @@ internal static class PresetWriter
             request.Parameters,
             request.Kcolor,
             Clamp(request.Blend, BlendMin, BlendMax),
-            request.Interpolation);
+            request.Interpolation,
+            request.ExtraModels);
 
     /// <summary>
     /// 合成 tvai_up 滤镜串。预设导出与「直接编码」共用本方法，
@@ -175,7 +177,8 @@ internal static class PresetWriter
         string? parameters = null,
         int? kcolor = null,
         double? blend = null,
-        InterpolationSettings? interpolation = null)
+        InterpolationSettings? interpolation = null,
+        IReadOnlyList<ExtraModelStage>? extraModels = null)
     {
         // 越界会被 tvai_up 硬拒（见常量处注释），这里统一钳制到实测值域。
         prenoise = Clamp(prenoise, PrenoiseMin, PrenoiseMax);
@@ -258,6 +261,25 @@ internal static class PresetWriter
             token += $",scale=w={targetWidth}:h={targetHeight}";
         }
 
+        // 降噪 / 去隔行段串在超分段**之前**：先降噪或去隔行，再放大——
+        // 与实证过的 nyx-3 → rhea-1 顺序一致（预设 Topaz-nyx3-rhea1）。
+        // **只允许一段放大**：若额外段里出现 scale>1，一律压回 1，
+        // 否则与主段的倍率复合（2x + 2x = 4x）。UI 侧已用开关禁用保证，这里兜底。
+        if (extraModels is not null)
+        {
+            foreach (var stage in extraModels)
+            {
+                if (stage is null || string.IsNullOrWhiteSpace(stage.Model))
+                {
+                    continue;
+                }
+
+                var stageScale = Math.Min(1, stage.Scale);
+                token = $"tvai_up=model={stage.Model}:scale={stageScale.ToString(CultureInfo.InvariantCulture)}" +
+                        ":device=0:vram=1:instances=1," + token;
+            }
+        }
+
         // 补帧段串在超分之后：tvai_up 先放大/修复，tvai_fi 再做帧插值，
         // 这两段共用同一条滤镜链（Topaz 官方也是这个顺序）。
         if (interpolation is not null && !string.IsNullOrWhiteSpace(interpolation.Model))
@@ -267,6 +289,12 @@ internal static class PresetWriter
 
         return token;
     }
+
+    /// <summary>
+    /// 额外的 tvai_up 段（降噪 / 去隔行）。与主段串在同一条滤镜链里、位于主段之前。
+    /// 实测依据：nyx-3 → rhea-1 双段（预设 Topaz-nyx3-rhea1）、ddv-3 → rhea-1（320×240→640×480）。
+    /// </summary>
+    public sealed record ExtraModelStage(string Model, int Scale = 1);
 
     /// <summary>
     /// 补帧（tvai_fi）设置。选项表取自 `-h filter=tvai_fi`（2026-10-08 实测）：

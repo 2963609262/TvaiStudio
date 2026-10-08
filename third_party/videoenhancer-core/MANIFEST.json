@@ -1,14 +1,14 @@
 {
     "description":  "Shared tvai core synced from the VideoEnhancer repository (single implementation; do not edit in place)",
     "sourceRepo":  "D:/code/VideoEnhancer/VideoEnhancer",
-    "sourceCommit":  "168f494ff1b691883365bd67bc72a403c3921b7e",
-    "syncedAtUtc":  "2026-10-08T10:57:41Z",
+    "sourceCommit":  "9e4cc1d0b8c609666dc44411930cc78b8eb3c3b0",
+    "syncedAtUtc":  "2026-10-08T14:36:08Z",
     "fileCount":  8,
     "files":  [
                   {
                       "file":  "TopazModelCatalog.cs",
                       "sourcePath":  "orchestrator/TopazModelCatalog.cs",
-                      "sha256":  "035cf6d96709b169f3886303811140af034451752ccaaaf8eb2de6c119cb07cd"
+                      "sha256":  "93c3e7089a9206fb4532cde794c1d0db6796c2e5c38212237c5617b49ec84bbf"
                   },
                   {
                       "file":  "TvaiFilterComposer.cs",
@@ -38,7 +38,7 @@
                   {
                       "file":  "PresetWriter.cs",
                       "sourcePath":  "tools/VideoEnhancer.TvaiTuner/PresetWriter.cs",
-                      "sha256":  "0fc67c48abde139aa5a3f0f3281d754728067c07b1de2a222abc1aa31de0beb7"
+                      "sha256":  "9dadbb1fc4228c4c801aaa85922b8c87b49033d50c11cc732a2463069abffb5b"
                   },
                   {
                       "file":  "PresetTemplate.json",
