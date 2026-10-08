@@ -33,6 +33,8 @@ internal static class PresetWriter
         double? Grain,
         double? Gsize,
         string? Parameters,
+        int? Kcolor,
+        double? Blend,
         EncoderProfile Encoder,
         bool ForceCfr,
         string PresetName,
@@ -47,6 +49,16 @@ internal static class PresetWriter
     public const double GrainMax = 1.0;
     public const double GsizeMin = 0.0;
     public const double GsizeMax = 5.0;
+
+    // kcolor / blend 同样取自 `-h filter=tvai_up`（2026-10-08）：
+    //   kcolor <int>  "Run extra color correction if required by model" (0..1, 默认 1)
+    //   blend  <double> "The amount of input to be blended with output" (0..1, 默认 0)
+    // 两者都不在模型 json 里，属滤镜级选项。为 null 时不写进滤镜串，
+    // 让 ffmpeg 用自己的默认值——保证既有预设的产出零变化。
+    public const int KcolorMin = 0;
+    public const int KcolorMax = 1;
+    public const double BlendMin = 0.0;
+    public const double BlendMax = 1.0;
 
     public static double? Clamp(double? value, double min, double max)
         => value is null ? null : Math.Min(max, Math.Max(min, value.Value));
@@ -140,7 +152,9 @@ internal static class PresetWriter
             Clamp(request.Prenoise, PrenoiseMin, PrenoiseMax),
             Clamp(request.Grain, GrainMin, GrainMax),
             Clamp(request.Gsize, GsizeMin, GsizeMax),
-            request.Parameters);
+            request.Parameters,
+            request.Kcolor,
+            Clamp(request.Blend, BlendMin, BlendMax));
 
     /// <summary>
     /// 合成 tvai_up 滤镜串。预设导出与「直接编码」共用本方法，
@@ -156,12 +170,19 @@ internal static class PresetWriter
         double? prenoise,
         double? grain,
         double? gsize,
-        string? parameters = null)
+        string? parameters = null,
+        int? kcolor = null,
+        double? blend = null)
     {
         // 越界会被 tvai_up 硬拒（见常量处注释），这里统一钳制到实测值域。
         prenoise = Clamp(prenoise, PrenoiseMin, PrenoiseMax);
         grain = Clamp(grain, GrainMin, GrainMax);
         gsize = Clamp(gsize, GsizeMin, GsizeMax);
+        blend = Clamp(blend, BlendMin, BlendMax);
+        if (kcolor is not null)
+        {
+            kcolor = Math.Min(KcolorMax, Math.Max(KcolorMin, kcolor.Value));
+        }
 
         // 注意：tvai_up 的 scale 不接受 "0:w=W:h=H" 这种 ffmpeg 通用写法——实测会被静默忽略，
         // 仍按模型原生倍率输出（例如请求 800x600 得到 1280x960）。要精确目标尺寸必须在
@@ -181,6 +202,18 @@ internal static class PresetWriter
         if (gsize is not null)
         {
             token += $":gsize={Format(gsize.Value)}";
+        }
+
+        // kcolor / blend 放在 gsize 之后、parameters 之前：与 prenoise/grain/gsize 同一段，
+        // 且都在 parameters 之前（SetOption 会把模型参数插在 parameters= 之前）。
+        if (kcolor is not null)
+        {
+            token += $":kcolor={kcolor.Value.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        if (blend is not null)
+        {
+            token += $":blend={Format(blend.Value)}";
         }
 
         // parameters= 是 Topaz 的自由串通道（例如 grain_sigma / grain_type），必须整体作为一个
@@ -264,7 +297,9 @@ internal static class PresetWriter
         double? prenoise,
         double? grain,
         double? gsize,
-        string? parameters = null)
+        string? parameters = null,
+        int? kcolor = null,
+        double? blend = null)
     {
         var token = ComposeFilterToken(
             model,
@@ -276,7 +311,9 @@ internal static class PresetWriter
             prenoise,
             grain,
             gsize,
-            parameters);
+            parameters,
+            kcolor,
+            blend);
 
         if (mode == "manual")
         {
