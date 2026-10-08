@@ -35,6 +35,7 @@ internal static class PresetWriter
         string? Parameters,
         int? Kcolor,
         double? Blend,
+        InterpolationSettings? Interpolation,
         EncoderProfile Encoder,
         bool ForceCfr,
         string PresetName,
@@ -154,7 +155,8 @@ internal static class PresetWriter
             Clamp(request.Gsize, GsizeMin, GsizeMax),
             request.Parameters,
             request.Kcolor,
-            Clamp(request.Blend, BlendMin, BlendMax));
+            Clamp(request.Blend, BlendMin, BlendMax),
+            request.Interpolation);
 
     /// <summary>
     /// 合成 tvai_up 滤镜串。预设导出与「直接编码」共用本方法，
@@ -172,7 +174,8 @@ internal static class PresetWriter
         double? gsize,
         string? parameters = null,
         int? kcolor = null,
-        double? blend = null)
+        double? blend = null,
+        InterpolationSettings? interpolation = null)
     {
         // 越界会被 tvai_up 硬拒（见常量处注释），这里统一钳制到实测值域。
         prenoise = Clamp(prenoise, PrenoiseMin, PrenoiseMax);
@@ -255,7 +258,57 @@ internal static class PresetWriter
             token += $",scale=w={targetWidth}:h={targetHeight}";
         }
 
+        // 补帧段串在超分之后：tvai_up 先放大/修复，tvai_fi 再做帧插值，
+        // 这两段共用同一条滤镜链（Topaz 官方也是这个顺序）。
+        if (interpolation is not null && !string.IsNullOrWhiteSpace(interpolation.Model))
+        {
+            token += "," + interpolation.BuildFilterToken();
+        }
+
         return token;
+    }
+
+    /// <summary>
+    /// 补帧（tvai_fi）设置。选项表取自 `-h filter=tvai_fi`（2026-10-08 实测）：
+    /// model / device / instances / download / vram / slowmo(0.1..16) / rdt(-0.01..0.2) /
+    /// fps(video_rate) / parameters(dictionary)。
+    /// 实测：25fps/25 帧源 + fps=50 → 50fps/49 帧；slowmo=2 → 49 帧；rdt=0.05 → 24 帧（移除重复帧生效）。
+    /// </summary>
+    public sealed record InterpolationSettings(
+        string Model,
+        string? FrameRate = null,
+        double? Slowmo = null,
+        double? ReplaceDuplicateThreshold = null)
+    {
+        public const double SlowmoMin = 0.1;
+        public const double SlowmoMax = 16.0;
+        public const double RdtMin = -0.01;
+        public const double RdtMax = 0.2;
+
+        public string BuildFilterToken()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("tvai_fi=model=").Append(Model);
+            if (FrameRate is not null && FrameRate.Length > 0)
+            {
+                sb.Append(":fps=").Append(FrameRate);
+            }
+
+            if (Slowmo is not null)
+            {
+                var slowmo = Math.Min(SlowmoMax, Math.Max(SlowmoMin, Slowmo.Value));
+                sb.Append(":slowmo=").Append(slowmo.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            if (ReplaceDuplicateThreshold is not null)
+            {
+                var rdt = Math.Min(RdtMax, Math.Max(RdtMin, ReplaceDuplicateThreshold.Value));
+                sb.Append(":rdt=").Append(rdt.ToString("0.###", CultureInfo.InvariantCulture));
+            }
+
+            sb.Append(":device=0:vram=1:instances=1");
+            return sb.ToString();
+        }
     }
 
     /// <summary>
